@@ -232,31 +232,35 @@ export function ScanTargetPage() {
 
       {/* สรุปข้อมูลเครื่องจักร */}
       <Card className="border-slate-200 overflow-hidden shadow-xs">
-        <div className="p-4 bg-slate-900 text-white flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center font-bold font-mono text-base text-amber-300 border border-white/10">
-              {equipment.code}
+        <div className="p-4 bg-slate-900 text-white">
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1.5 flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="inline-block px-2.5 py-1 rounded-lg bg-amber-400/20 text-amber-300 font-mono font-black text-xs border border-amber-400/30 tracking-wide">
+                  {equipment.code}
+                </span>
+                <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
+                  ข้อมูลอุปกรณ์หน้างาน
+                </span>
+              </div>
+              <h2 className="text-base font-bold leading-snug break-words text-white">
+                {equipment.name}
+              </h2>
             </div>
-            <div>
-              <span className="text-[10px] text-slate-300 font-bold uppercase tracking-wider block">
-                ข้อมูลอุปกรณ์หน้างาน
-              </span>
-              <h2 className="text-lg font-bold leading-tight">{equipment.name}</h2>
-            </div>
-          </div>
 
-          <Badge
-            variant={
-              equipment.status === 'active'
-                ? 'default'
-                : equipment.status === 'inactive'
-                ? 'destructive'
-                : 'secondary'
-            }
-            className="text-xs font-semibold px-2 py-0.5"
-          >
-            {EQUIPMENT_STATUS_LABELS[equipment.status].split(' ')[0]}
-          </Badge>
+            <Badge
+              variant={
+                equipment.status === 'active'
+                  ? 'default'
+                  : equipment.status === 'inactive'
+                  ? 'destructive'
+                  : 'secondary'
+              }
+              className="text-[11px] py-1 px-2.5 shrink-0 font-semibold"
+            >
+              {EQUIPMENT_STATUS_LABELS[equipment.status].split(' ')[0]}
+            </Badge>
+          </div>
         </div>
 
         <CardContent className="p-4 space-y-3">
