@@ -11,6 +11,51 @@
     <meta name="apple-mobile-web-app-title" content="Factory CMMS" />
     <meta name="description" content="ระบบแจ้งซ่อมและจัดการอุปกรณ์โรงงานอุตสาหกรรม (Lightweight CMMS Mobile-First)" />
     <title>Factory CMMS - ระบบแจ้งซ่อมและจัดการอุปกรณ์โรงงาน</title>
+    <style>
+      /* สั่งซ่อน Netlify badge / drawer และ iframe ทั้งหมดแบบเด็ดขาด */
+      [data-netlify-deploy-id],
+      netlify-drawer,
+      #netlify-drawer,
+      .netlify-drawer,
+      iframe[src*="netlify"],
+      div[style*="z-index: 2147483647"],
+      div[style*="z-index: 999999"],
+      div[style*="bottom: 0"]:has(span, a, button) {
+        /* ป้องกันกรณี badge ลอยทับแถบล่าง */
+      }
+      iframe[id*="netlify"],
+      iframe[title*="Netlify"],
+      div[id*="netlify-feedback"] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+      }
+    </style>
+    <script>
+      // MutationObserver ดักจับและลบ badge ของ Netlify ออกจากหน้าจอทันที
+      (function() {
+        const removeNetlify = function() {
+          const elements = document.querySelectorAll(
+            'netlify-drawer, #netlify-drawer, [data-netlify-deploy-id], iframe[src*="netlify"], iframe[title*="Netlify"], div[id*="netlify-feedback"], a[href*="netlify.com"]'
+          );
+          elements.forEach(function(el) {
+            // ถ้าเป็นปุ่ม Powered by Netlify หรือ Drawer ให้ลบทิ้ง
+            if (el.tagName === 'A' || el.tagName === 'DIV' || el.tagName === 'IFRAME' || el.tagName === 'NETLIFY-DRAWER') {
+              if (el.innerText && el.innerText.includes('Powered by Netlify')) {
+                el.remove();
+              } else if (el.tagName === 'NETLIFY-DRAWER' || el.id.includes('netlify')) {
+                el.remove();
+              }
+            }
+          });
+        };
+        const observer = new MutationObserver(removeNetlify);
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+        window.addEventListener('DOMContentLoaded', removeNetlify);
+        window.addEventListener('load', removeNetlify);
+      })();
+    </script>
   </head>
   <body class="bg-slate-50 antialiased selection:bg-blue-500 selection:text-white">
     <div id="root"></div>
