@@ -75,4 +75,15 @@
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-tap-highlight-color: transparent;
   }
+
+  /* ซ่อน Netlify Feedback Drawer / Badge */
+  [data-netlify-deploy-id],
+  netlify-drawer,
+  #netlify-drawer,
+  iframe[src*="netlify"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
 }
