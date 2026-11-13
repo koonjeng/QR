@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { LoadingState, ErrorState, EmptyState } from '@/components/ui/states';
+import { Pagination } from '@/components/ui/pagination';
 import {
   Plus,
   Search,
@@ -48,10 +49,15 @@ export function EquipmentListPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<EquipmentWithLocation | null>(null);
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   const loadData = async () => {
     try {
       setIsLoading(true);
       setError(null);
+      setCurrentPage(1); // รีเซ็ตหน้ากลับเป็นหน้า 1 เมื่อฟิลเตอร์เปลี่ยน
       const [eqs, locs] = await Promise.all([
         getEquipments({
           search,
@@ -99,6 +105,13 @@ export function EquipmentListPage() {
     }
     navigate(`/equipment/print-qr?ids=${selectedIds.join(',')}`);
   };
+
+  // คำนวณข้อมูลสำหรับ Pagination
+  const totalPages = Math.ceil(equipments.length / pageSize) || 1;
+  const paginatedEquipments = equipments.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   return (
     <div className="space-y-4 pb-20">
@@ -238,7 +251,7 @@ export function EquipmentListPage() {
         />
       ) : (
         <div className="space-y-2.5">
-          {equipments.map((eq) => {
+          {paginatedEquipments.map((eq) => {
             const isSelected = selectedIds.includes(eq.id);
             return (
               <div key={eq.id} className="relative">
@@ -322,6 +335,23 @@ export function EquipmentListPage() {
               </div>
             );
           })}
+
+          {/* Pagination Controls */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={equipments.length}
+            pageSize={pageSize}
+            onPageChange={(p) => {
+              setCurrentPage(p);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setCurrentPage(1);
+            }}
+            pageSizeOptions={[5, 10, 20, 50]}
+          />
         </div>
       )}
 

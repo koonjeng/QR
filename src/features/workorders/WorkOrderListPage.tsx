@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { LoadingState, ErrorState, EmptyState } from '@/components/ui/states';
+import { Pagination } from '@/components/ui/pagination';
 import { formatDate } from '@/lib/utils';
 import {
   Search,
@@ -50,10 +51,15 @@ export function WorkOrdersPage() {
   const [tabFilter, setTabFilter] = useState<'all' | 'open' | 'my' | 'closed'>('all');
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   const loadData = async () => {
     try {
       setIsLoading(true);
       setError(null);
+      setCurrentPage(1); // รีเซ็ตหน้ากลับเป็นหน้า 1 เมื่อเงื่อนไขเปลี่ยน
 
       const filters: WorkOrderFilters = {
         search: search.trim() || undefined,
@@ -107,6 +113,13 @@ export function WorkOrdersPage() {
       setAcceptingId(null);
     }
   };
+
+  // คำนวณข้อมูลสำหรับ Pagination
+  const totalPages = Math.ceil(workOrders.length / pageSize) || 1;
+  const paginatedWorkOrders = workOrders.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   return (
     <div className="space-y-3.5 pb-20">
@@ -238,7 +251,7 @@ export function WorkOrdersPage() {
         />
       ) : (
         <div className="space-y-3">
-          {workOrders.map((wo) => {
+          {paginatedWorkOrders.map((wo) => {
             const statusColor = STATUS_COLORS[wo.status];
             const priorityColor = PRIORITY_COLORS[wo.priority];
             const isUnassigned = !wo.assigned_to;
@@ -315,6 +328,23 @@ export function WorkOrdersPage() {
               </Link>
             );
           })}
+
+          {/* Pagination Controls */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={workOrders.length}
+            pageSize={pageSize}
+            onPageChange={(p) => {
+              setCurrentPage(p);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setCurrentPage(1);
+            }}
+            pageSizeOptions={[5, 10, 20, 50]}
+          />
         </div>
       )}
     </div>
