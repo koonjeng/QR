@@ -1,0 +1,90 @@
+# ระบบแจ้งซ่อมและจัดการอุปกรณ์โรงงานอุตสาหกรรม (Lightweight CMMS Mobile-First)
+
+เว็บแอปพลิเคชันจัดการงานซ่อมบำรุงและทะเบียนอุปกรณ์โรงงาน ออกแบบเน้นการใช้งานบนโทรศัพท์มือถือหน้างาน (Mobile-first) รองรับการสแกน QR Code หน้าเครื่องเพื่อแจ้งซ่อมได้ภายใน 3 แตะ พร้อมระบบ Realtime Notifications, Dashboard สถิติ, และ PWA ติดตั้งลงมือถือได้ทันที
+
+---
+
+## 🛠 Tech Stack
+- **Frontend**: React 19 + Vite + TypeScript
+- **Routing**: React Router (พร้อมระบบ Protected Routes และ Redirect หลัง Login)
+- **Data Fetching**: TanStack Query (React Query)
+- **UI & Styling**: Tailwind CSS + CSS System สไตล์ shadcn/ui + Lucide Icons
+- **Form & Validation**: react-hook-form + zod
+- **QR Code**: qrcode.react (จัดหน้าพิมพ์สติกเกอร์ลงกระดาษ A4)
+- **Backend & DB**: Supabase (PostgreSQL, Supabase Auth, Row Level Security, Storage, Realtime)
+- **PWA**: vite-plugin-pwa (Web App Manifest, Service Worker, Install to Home Screen)
+- **Client Compression**: บีบอัดรูปภาพฝั่ง Client ก่อนอัปโหลด ประหยัดแบนด์วิธมือถือ
+
+---
+
+## 👥 บทบาทและสิทธิ์การใช้งาน (Roles & Permissions)
+1. **operator**: สแกน QR หน้าเครื่อง, แจ้งซ่อมด่วน 3 แตะ, ดูสถานะเฉพาะงานที่ตัวเองแจ้ง
+2. **technician**: ดูใบงานทั้งหมด, กดรับงานด้วยตนเอง, บันทึกสาเหตุ (Cause) / วิธีแก้ (Solution) / แนบรูป, อัปเดตสถานะงาน
+3. **supervisor**: ทุกอย่างของ technician + มอบหมายงานให้ช่าง, ปิดงานซ่อม (Close WO), จัดการอุปกรณ์/สถานที่, ดู Dashboard สรุปงาน
+4. **admin**: สิทธิ์สูงสุดในระบบ + จัดการผู้ใช้งานและเปลี่ยน Role, ดูบันทึก Database Audit Logs
+
+---
+
+## 🚀 ฟีเจอร์หลัก (Features Implemented)
+
+### 1. Authentication & Role-based Access
+- เข้าสู่ระบบด้วย Email + Password ผ่าน Supabase Auth
+- ตาราง `profiles` ซิงค์กับ `auth.users` อัตโนมัติด้วย Trigger (ผู้สมัครคนแรกได้รับสิทธิ์ `admin` ทันที)
+- Protected Route ตรวจสอบสิทธิ์อัตโนมัติ พร้อมรองรับ `?redirect=/scan/:equipmentId` ล็อกอินเสร็จกลับไปหน้าเดิมทันที
+
+### 2. ทะเบียนอุปกรณ์ + พิมพ์ QR Code (A4 Stickers)
+- จัดการข้อมูลเครื่องจักร: รหัสเครื่อง (Unique), ชื่อ, สถานที่ (พื้นที่ $\rightarrow$ ไลน์), ยี่ห้อ, รุ่น, Serial, วันซื้อ, วันประกัน, สถานะ, รูป, คู่มือ PDF
+- **QR Code เก็บเฉพาะ URL**: `https://<domain>/scan/<equipment_id>` (ไม่เก็บข้อมูลอื่นใน QR)
+- **หน้าพิมพ์สติกเกอร์ QR**: เลือกหลายเครื่องแล้วจัดวางเป็นสติกเกอร์ Grid สวยงามบนกระดาษ A4 มีรหัสเครื่องและชื่อเครื่องใต้ QR พร้อมปุ่ม Print
+
+### 3. Flow สแกน QR $\rightarrow$ หน้าเครื่อง $\rightarrow$ แจ้งซ่อมด่วน 3 แตะ
+- สแกน QR แล้วเปิดหน้าสรุปข้อมูลเครื่องทันที (รหัส, ชื่อ, สถานที่, สถานะ, งานซ่อมที่ค้างอยู่)
+- **3-Tap Quick Report Flow**:
+  - **แตะ 1**: กดปุ่ม [แจ้งซ่อมด่วน]
+  - **แตะ 2**: แตะเลือกประเภทปัญหา (⚙️ เครื่องกล, ⚡ ไฟฟ้า, 💨 นิวเมติก, 💧 ไฮดรอลิก, ❓ อื่นๆ)
+  - **แตะ 3**: กด [ยืนยันส่งแจ้งซ่อม] เสร็จสิ้นทันทีภายใน 3 วินาที
+  - ตัวเลือกเสริม: เลือกระดับความเร่งด่วน, กรอกคำอธิบาย, ถ่ายรูปแนบหน้างาน (บีบอัดรูปอัตโนมัติ)
+
+### 4. Work Order เต็มรูปแบบ & Timeline Logs
+- วงจรสถานะงาน: `reported` $\rightarrow$ `accepted` $\rightarrow$ `in_progress` $\rightarrow$ `waiting_parts` $\rightarrow$ `inspection` $\rightarrow$ `closed` (และ `cancelled`)
+- รหัส Running Number อัตโนมัติ เช่น `WO-YYMM-0001`
+- ไทม์ไลน์บันทึกประวัติการเปลี่ยนสถานะทุกขั้นตอนลง `work_order_logs` (ใคร/เมื่อไหร่/อะไร)
+- ช่างบันทึกสาเหตุ, วิธีแก้ไข, แนบรูปผลงาน, และหัวหน้างานอนุมัติปิดงาน
+
+### 5. Realtime Notification & Dashboard สถิติ
+- แจ้งเตือนผ่าน Supabase Realtime พร้อม Badge ตัวเลขบนแถบเมนูด้านบน เมื่อมีงานใหม่หรือสถานะเปลี่ยนจะอัปเดตทันที
+- Dashboard สรุปภาพรวม: จำนวนงานค้างแยกตามสถานะ, เครื่องที่เสียบ่อยสุด Top 10, และรายการงานเร่งด่วนที่ยังไม่ปิด
+- หน้า Audit Log สำหรับ Admin ตรวจสอบประวัติ Database Trigger ย้อนหลัง
+
+### 6. PWA (Progressive Web App)
+- รองรับการติดตั้งลงหน้าจอมือถือ (Add to Home Screen)
+- มี Service Worker แคชไฟล์สำหรับการใช้งานที่รวดเร็ว
+
+---
+
+## 💻 วิธีการติดตั้งและเริ่มใช้งาน
+
+### 1. ติดตั้ง Dependencies
+```bash
+npm install
+```
+
+### 2. ตั้งค่าไฟล์ `.env`
+คัดลอกไฟล์ `.env.example` เป็น `.env`:
+```bash
+cp .env.example .env
+```
+กำหนดค่า URL และ Anon Key จาก Supabase Project:
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
+
+### 3. รัน Database Migration
+นำโค้ดในไฟล์ `supabase/migrations/001_initial_schema.sql` ไป Execute ใน **Supabase SQL Editor**
+
+### 4. รันระบบ
+```bash
+npm run dev
+```
+เปิดใช้งานผ่านมือถือหรือเบราว์เซอร์ที่ `http://localhost:5173`
