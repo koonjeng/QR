@@ -4,6 +4,7 @@ import { AuditLog, AuditAction } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { LoadingState, ErrorState, EmptyState } from '@/components/ui/states';
+import { Pagination } from '@/components/ui/pagination';
 import { formatDate } from '@/lib/utils';
 import { ShieldCheck, History, Clock, Database, ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -19,15 +20,33 @@ export function AuditLogPage() {
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const fetchLogs = async () => {
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+
+  const fetchLogs = async (page = currentPage, limit = pageSize) => {
     try {
       setIsLoading(true);
       setError(null);
+
+      // ดึงจำนวนรายการทั้งหมดก่อน
+      const { count, error: countErr } = await supabase
+        .from('audit_logs')
+        .select('*', { count: 'exact', head: true });
+
+      if (countErr) throw countErr;
+      setTotalCount(count || 0);
+
+      // คำนวณช่วง offset
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+
       const { data, error } = await supabase
         .from('audit_logs')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(50);
+        .range(from, to);
 
       if (error) throw error;
       setLogs((data as AuditLog[]) || []);
@@ -39,8 +58,10 @@ export function AuditLogPage() {
   };
 
   useEffect(() => {
-    fetchLogs();
-  }, []);
+    fetchLogs(currentPage, pageSize);
+  }, [currentPage, pageSize]);
+
+  const totalPages = Math.ceil(totalCount / pageSize) || 1;
 
   return (
     <div className="space-y-4 pb-20">
@@ -53,14 +74,14 @@ export function AuditLogPage() {
         </div>
         <Badge variant="outline" className="font-mono text-xs gap-1">
           <History className="w-3.5 h-3.5" />
-          {logs.length} รายการ
+          {totalCount} รายการ
         </Badge>
       </div>
 
       {isLoading ? (
         <LoadingState message="กำลังโหลดประวัติ Audit Logs..." />
       ) : error ? (
-        <ErrorState message={error} onRetry={fetchLogs} />
+        <ErrorState message={error} onRetry={() => fetchLogs(currentPage, pageSize)} />
       ) : logs.length === 0 ? (
         <EmptyState
           icon={<ShieldCheck className="w-12 h-12 stroke-[1.5]" />}
@@ -90,7 +111,7 @@ export function AuditLogPage() {
                     </div>
 
                     <span className="text-[10px] text-slate-400 flex items-center gap-1 font-mono">
-                      <Clock className="w-3 h-3" />
+                      <Clock className="w-3.5 h-3.5" />
                       {formatDate(log.created_at)}
                     </span>
                   </div>
@@ -133,9 +154,25 @@ export function AuditLogPage() {
               </Card>
             );
           })}
+
+          {/* Pagination Controls */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalCount}
+            pageSize={pageSize}
+            onPageChange={(p) => {
+              setCurrentPage(p);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setCurrentPage(1);
+            }}
+            pageSizeOptions={[10, 20, 50, 100]}
+          />
         </div>
       )}
     </div>
   );
 }
-
